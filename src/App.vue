@@ -208,11 +208,20 @@ const generateOutput = async () => {
 <template>
   <div class="app" :class="{ dark: isDark }">
     <header>
-      <h1>PDF Service Playground</h1>
-      <a href="https://github.com/chromium-pdf/chromium-pdf-service" target="_blank" rel="noopener noreferrer" class="github-link">
+      <h1>PDF/Screenshot Service Playground</h1>
+      <a
+        href="https://github.com/chromium-pdf/chromium-pdf-service"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="github-link"
+      >
         Github
       </a>
-      <button class="theme-toggle" @click="toggleTheme" :title="isDark ? 'Light mode' : 'Dark mode'">
+      <button
+        class="theme-toggle"
+        @click="toggleTheme"
+        :title="isDark ? 'Light mode' : 'Dark mode'"
+      >
         <span v-if="isDark">&#9788;</span>
         <span v-else>&#9790;</span>
       </button>
@@ -235,10 +244,16 @@ const generateOutput = async () => {
             <div class="control-group">
               <label>Source</label>
               <div class="button-group">
-                <button :class="{ active: conversionType === 'html' }" @click="conversionType = 'html'">
+                <button
+                  :class="{ active: conversionType === 'html' }"
+                  @click="conversionType = 'html'"
+                >
                   HTML
                 </button>
-                <button :class="{ active: conversionType === 'url' }" @click="conversionType = 'url'">
+                <button
+                  :class="{ active: conversionType === 'url' }"
+                  @click="conversionType = 'url'"
+                >
                   URL
                 </button>
               </div>
@@ -277,7 +292,11 @@ const generateOutput = async () => {
               <span class="options-toggle-icon">{{ showOptions ? '▼' : '▶' }}</span>
               Options
             </button>
-            <OptionsPanel v-show="showOptions" ref="optionsPanelRef" :output-format="outputFormat" />
+            <OptionsPanel
+              v-show="showOptions"
+              ref="optionsPanelRef"
+              :output-format="outputFormat"
+            />
             <HttpOptions v-show="showOptions" ref="httpOptionsRef" />
           </section>
 
@@ -300,7 +319,11 @@ const generateOutput = async () => {
             <div v-if="result">
               <div class="result-header">
                 <h2>Result</h2>
-                <a :href="result.url" :download="`output.${result.type === 'pdf' ? 'pdf' : 'png'}`" class="download-btn">
+                <a
+                  :href="result.url"
+                  :download="`output.${result.type === 'pdf' ? 'pdf' : 'png'}`"
+                  class="download-btn"
+                >
                   Download
                 </a>
               </div>
@@ -340,8 +363,13 @@ const generateOutput = async () => {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, sans-serif;
-  transition: background 0.2s, color 0.2s;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .app.dark {
