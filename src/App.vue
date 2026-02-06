@@ -209,6 +209,9 @@ const generateOutput = async () => {
   <div class="app" :class="{ dark: isDark }">
     <header>
       <h1>PDF Service Playground</h1>
+      <a href="https://github.com/chromium-pdf/chromium-pdf-service" target="_blank" rel="noopener noreferrer" class="github-link">
+        Github
+      </a>
       <button class="theme-toggle" @click="toggleTheme" :title="isDark ? 'Light mode' : 'Dark mode'">
         <span v-if="isDark">&#9788;</span>
         <span v-else>&#9790;</span>
@@ -362,6 +365,23 @@ header {
 header h1 {
   font-size: 1.25rem;
   font-weight: 600;
+}
+
+.github-link {
+  margin-left: auto;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.github-link:hover {
+  background: var(--border);
 }
 
 .theme-toggle {
