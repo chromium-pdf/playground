@@ -3,7 +3,7 @@
 A Vue.js playground app is included for testing the PDF and Screenshot APIs interactively.
 
 > [!NOTE]
-> This playground app is build for test [chromium-pdf-service](https://github.com/chromium-pdf/chromium-pdf-service).
+> This playground app is build for test [chromium-pdf-service](https://github.com/chromium-pdf/chromium-pdf-service). To learn more about the API, see the [API documentation](https://chromium-pdf.github.io/chromium-pdf-service/api/endpoints.html).
 
 ## Setup
 
