@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/settings.json
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Generated PDFs (keep directory but ignore files)
+pdf-files/*.pdf
+
+# Settings (keep example, ignore actual)
+data/settings.json
+
+pdf-files/
+
+# Queue persistence
+data/queue.json
+data/screenshot-queue.json
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# VitePress
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
+# Misc
+*.tgz
+.npm
+coverage/
