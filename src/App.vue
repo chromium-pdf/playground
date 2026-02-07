@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import axios from 'axios'
+import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
 import OptionsPanel from './components/OptionsPanel.vue'
 import HttpOptions from './components/HttpOptions.vue'
 
@@ -44,6 +45,26 @@ const jobState = ref<JobState | null>(null)
 const showOptions = ref(false)
 const optionsPanelRef = ref<InstanceType<typeof OptionsPanel> | null>(null)
 const httpOptionsRef = ref<InstanceType<typeof HttpOptions> | null>(null)
+const activeTab = ref<'preview' | 'payload'>('preview')
+const lastPayload = ref<any>(null)
+const copySuccess = ref(false)
+
+const payloadJson = computed(() => {
+  return lastPayload.value ? JSON.stringify(lastPayload.value, null, 2) : ''
+})
+
+const editorOptions = {
+  readOnly: true,
+  minimap: { enabled: false },
+  scrollBeyondLastLine: false,
+  fontSize: 13,
+  lineNumbers: 'on' as const,
+  automaticLayout: true,
+  scrollbar: {
+    vertical: 'auto' as const,
+    horizontal: 'auto' as const,
+  },
+}
 
 const baseUrl = () => serverUrl.value.replace(/\/$/, '')
 
@@ -141,6 +162,20 @@ const downloadResult = async (requestedKey: string, format: OutputFormat): Promi
   return response.data
 }
 
+const copyPayloadToClipboard = async () => {
+  if (!payloadJson.value) return
+
+  try {
+    await navigator.clipboard.writeText(payloadJson.value)
+    copySuccess.value = true
+    setTimeout(() => {
+      copySuccess.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy:', err)
+  }
+}
+
 const generateOutput = async () => {
   isLoading.value = true
   error.value = ''
@@ -168,6 +203,9 @@ const generateOutput = async () => {
       conversionType.value === 'html'
         ? { requestedKey, html: htmlContent.value, reCreate: true, options }
         : { requestedKey, url: urlInput.value, reCreate: true, options }
+
+    // Store payload for display
+    lastPayload.value = payload
 
     const queueResponse = await axios.post(endpoint, payload)
     jobState.value = {
@@ -315,24 +353,65 @@ const generateOutput = async () => {
         </div>
 
         <div class="right-panel">
-          <section class="result" :class="{ 'has-result': result }">
-            <div v-if="result">
-              <div class="result-header">
-                <h2>Result</h2>
-                <a
-                  :href="result.url"
-                  :download="`output.${result.type === 'pdf' ? 'pdf' : 'png'}`"
-                  class="download-btn"
-                >
-                  Download
-                </a>
-              </div>
-              <iframe v-if="result.type === 'pdf'" :src="result.url" class="preview-frame" />
-              <img v-else :src="result.url" class="preview-image" alt="Screenshot result" />
+          <section class="result">
+            <div class="tab-navigation">
+              <button
+                :class="['tab-button', { active: activeTab === 'preview' }]"
+                @click="activeTab = 'preview'"
+              >
+                Preview
+              </button>
+              <button
+                :class="['tab-button', { active: activeTab === 'payload' }]"
+                @click="activeTab = 'payload'"
+              >
+                Request Payload
+              </button>
             </div>
-            <div v-else class="result-placeholder">
-              <div class="placeholder-icon">📄</div>
-              <p>Generated PDF or screenshot will appear here</p>
+
+            <div v-if="activeTab === 'preview'" class="tab-content">
+              <div v-if="result">
+                <div class="result-header">
+                  <h2>Result</h2>
+                  <a
+                    :href="result.url"
+                    :download="`output.${result.type === 'pdf' ? 'pdf' : 'png'}`"
+                    class="download-btn"
+                  >
+                    Download
+                  </a>
+                </div>
+                <iframe v-if="result.type === 'pdf'" :src="result.url" class="preview-frame" />
+                <img v-else :src="result.url" class="preview-image" alt="Screenshot result" />
+              </div>
+              <div v-else class="result-placeholder">
+                <div class="placeholder-icon">📄</div>
+                <p>Generated PDF or screenshot will appear here</p>
+              </div>
+            </div>
+
+            <div v-if="activeTab === 'payload'" class="tab-content">
+              <div v-if="lastPayload">
+                <div class="result-header">
+                  <h2>Request Payload</h2>
+                  <button class="copy-btn" @click="copyPayloadToClipboard">
+                    {{ copySuccess ? 'Copied!' : 'Copy' }}
+                  </button>
+                </div>
+                <div class="editor-wrapper">
+                  <VueMonacoEditor
+                    :value="payloadJson"
+                    language="json"
+                    :theme="isDark ? 'vs-dark' : 'vs'"
+                    :options="editorOptions"
+                    height="500px"
+                  />
+                </div>
+              </div>
+              <div v-else class="result-placeholder">
+                <div class="placeholder-icon">📋</div>
+                <p>Request payload will appear here after generation</p>
+              </div>
             </div>
           </section>
         </div>
@@ -676,13 +755,52 @@ input:focus {
 
 .result {
   min-height: 400px;
-  padding: 1.5rem;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--bg-secondary);
+  overflow: hidden;
 }
 
-.result.has-result {
+.tab-navigation {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.tab-button {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.tab-button:hover {
+  color: var(--text);
+  background: var(--bg-secondary);
+}
+
+.tab-button.active {
+  color: var(--text);
+  background: var(--bg-secondary);
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary);
+}
+
+.tab-content {
   padding: 1.5rem;
 }
 
@@ -718,7 +836,8 @@ input:focus {
   font-weight: 600;
 }
 
-.download-btn {
+.download-btn,
+.copy-btn {
   padding: 0.5rem 1rem;
   border-radius: 6px;
   background: var(--bg-secondary);
@@ -727,10 +846,23 @@ input:focus {
   text-decoration: none;
   font-size: 0.875rem;
   transition: background 0.2s;
+  cursor: pointer;
 }
 
-.download-btn:hover {
+.download-btn:hover,
+.copy-btn:hover {
   background: var(--border);
+}
+
+.copy-btn {
+  min-width: 80px;
+}
+
+.editor-wrapper {
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .preview-frame {
