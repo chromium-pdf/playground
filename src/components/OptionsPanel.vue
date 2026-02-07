@@ -13,6 +13,11 @@ interface BrowserOptions {
   colorScheme: 'light' | 'dark' | 'no-preference' | ''
 }
 
+interface LaunchOptions {
+  headless: boolean
+  args: string
+}
+
 interface PdfOptions {
   format: string
   landscape: boolean
@@ -65,14 +70,25 @@ const defaultScreenshotOptions: ScreenshotOptions = {
   omitBackground: false,
 }
 
+const defaultLaunchOptions: LaunchOptions = {
+  headless: true,
+  args: '',
+}
+
 const browserOptions = reactive<BrowserOptions>({ ...defaultBrowserOptions })
 const pdfOptions = reactive<PdfOptions>({ ...defaultPdfOptions })
 const screenshotOptions = reactive<ScreenshotOptions>({ ...defaultScreenshotOptions })
+const launchOptions = reactive<LaunchOptions>({ ...defaultLaunchOptions })
 
 const saveOptions = () => {
   localStorage.setItem(
     STORAGE_KEY,
-    JSON.stringify({ browser: browserOptions, pdf: pdfOptions, screenshot: screenshotOptions })
+    JSON.stringify({
+      browser: browserOptions,
+      pdf: pdfOptions,
+      screenshot: screenshotOptions,
+      launch: launchOptions,
+    })
   )
 }
 
@@ -84,6 +100,7 @@ const loadOptions = () => {
       if (parsed.browser) Object.assign(browserOptions, parsed.browser)
       if (parsed.pdf) Object.assign(pdfOptions, parsed.pdf)
       if (parsed.screenshot) Object.assign(screenshotOptions, parsed.screenshot)
+      if (parsed.launch) Object.assign(launchOptions, parsed.launch)
     } catch {
       // ignore
     }
@@ -94,16 +111,23 @@ const resetOptions = () => {
   Object.assign(browserOptions, defaultBrowserOptions)
   Object.assign(pdfOptions, defaultPdfOptions)
   Object.assign(screenshotOptions, defaultScreenshotOptions)
+  Object.assign(launchOptions, defaultLaunchOptions)
   saveOptions()
 }
 
-watch([browserOptions, pdfOptions, screenshotOptions], saveOptions, { deep: true })
+watch([browserOptions, pdfOptions, screenshotOptions, launchOptions], saveOptions, { deep: true })
 
 onMounted(() => {
   loadOptions()
 })
 
 const buildRequestOptions = () => {
+  // Parse launch args from textarea
+  const argsArray = launchOptions.args
+    .split('\n')
+    .map((arg) => arg.trim())
+    .filter((arg) => arg.length > 0)
+
   const options: Record<string, unknown> = {
     browser: {
       viewport: {
@@ -115,6 +139,10 @@ const buildRequestOptions = () => {
       ...(browserOptions.waitForSelector && { waitForSelector: browserOptions.waitForSelector }),
       ...(browserOptions.disableAnimations && { disableAnimations: true }),
       ...(browserOptions.colorScheme && { colorScheme: browserOptions.colorScheme }),
+      launchOptions: {
+        headless: launchOptions.headless,
+        args: argsArray,
+      },
     },
   }
 
@@ -188,6 +216,26 @@ defineExpose({
           <option value="dark">Dark</option>
           <option value="no-preference">No Preference</option>
         </select>
+      </div>
+    </div>
+
+    <div class="options-header">
+      <h3>Launch Options</h3>
+    </div>
+    <div class="options-grid">
+      <div class="option-field checkbox">
+        <label>
+          <input type="checkbox" v-model="launchOptions.headless" />
+          Headless
+        </label>
+      </div>
+      <div class="option-field full-width">
+        <label>Launch Arguments (one per line)</label>
+        <textarea
+          v-model="launchOptions.args"
+          placeholder="--no-sandbox&#10;--disable-setuid-sandbox"
+          rows="4"
+        />
       </div>
     </div>
 
@@ -338,7 +386,8 @@ defineExpose({
 }
 
 .option-field input,
-.option-field select {
+.option-field select,
+.option-field textarea {
   width: 100%;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border);
@@ -349,8 +398,14 @@ defineExpose({
   font-size: 0.8125rem;
 }
 
+.option-field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
 .option-field input:focus,
-.option-field select:focus {
+.option-field select:focus,
+.option-field textarea:focus {
   outline: none;
   border-color: var(--primary);
 }
